@@ -75,3 +75,475 @@ How CORS enables cross-origin requests between different ports
 💪 Your Current Status
 You have a fully functional Flask backend skeleton with all the infrastructure in place. The foundation is solid and ready for your teammate to add the database logic. Once that's complete, you'll be ready to build the React frontend and have a complete full-stack application.
 Bottom line: Your backend server is alive, all routes are defined, and the database connection works. You're about 40% done with the backend and ready to either add database logic or move to frontend development!
+
+
+//////////////////////////////////////////////////
+import { useState, useEffect } from "react";
+import streams from "./streamsArray";
+import "./AllStreams.css";
+
+export default function AllStreams() {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [touchStartX, setTouchStartX] = useState(0);
+
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  function handleExpand() {
+    setIsExpanded((prev) => !prev);
+  }
+  const updateCarousel = (newIndex) => {
+    if (isAnimating) return;
+    setIsAnimating(true);
+    setCurrentIndex((newIndex + streams.length) % streams.length);
+
+    setTimeout(() => {
+      setIsAnimating(false);
+    }, 800);
+  };
+
+  const getCardClass = (index) => {
+    const offset = (index - currentIndex + streams.length) % streams.length;
+    if (offset === 0) return "center";
+    if (offset === 1) return "right-1";
+    if (offset === 2) return "right-2";
+    if (offset === streams.length - 1) return "left-1";
+    if (offset === streams.length - 2) return "left-2";
+    return "hidden";
+  };
+
+  const handleSwipe = (touchEndX) => {
+    const swipeThreshold = 50;
+    const diff = touchStartX - touchEndX;
+    if (Math.abs(diff) > swipeThreshold) {
+      if (diff > 0) {
+        updateCarousel(currentIndex + 1);
+      } else {
+        updateCarousel(currentIndex - 1);
+      }
+    }
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "ArrowLeft") {
+        updateCarousel(currentIndex - 1);
+      } else if (e.key === "ArrowRight") {
+        updateCarousel(currentIndex + 1);
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [currentIndex, isAnimating]);
+
+  return (
+    <div className="AllStreams">
+      <h1 className="about-title">STREAMS</h1>
+      <div className="carousel-container">
+        <button
+          className="nav-arrow left"
+          onClick={() => { 
+          updateCarousel(currentIndex - 1);
+         
+          }}
+        >
+          ‹
+        </button>
+        <div
+          className="carousel-track"
+          onTouchStart={(e) => setTouchStartX(e.changedTouches[0].screenX)}
+          onTouchEnd={(e) => handleSwipe(e.changedTouches[0].screenX)}
+        >
+          {streams.map((stream, index) => (
+            <div
+              key={stream.id}
+              className={isExpanded? "card-expanded": `card ${getCardClass(index)}`}
+              data-index={stream.id}
+              onClick={() => updateCarousel(index)}
+            >
+              <img src={stream.url} alt={stream.id} />
+              <div className={isExpanded? "minus-button": "add-button"}
+              onClick={handleExpand}
+              ></div>
+            </div>
+          ))}
+        </div>
+        <button
+          className="nav-arrow right"
+          onClick={() => updateCarousel(currentIndex + 1)}
+        >
+          ›
+        </button>
+      </div>
+
+      <div className="member-info">
+        <h2 className="member-name" style={{ opacity: isAnimating ? 0 : 1 }}>
+          {streams[currentIndex]?.title}
+        </h2>
+      </div>
+
+      <div className="dots">
+        {streams.map((stream, index) => (
+          <div
+            key={stream.id}
+            className={`dot ${index === currentIndex ? "active" : ""}`}
+            data-index={index}
+            onClick={() => { 
+            updateCarousel(index);
+          
+            }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/////////////////////////////
+
+.AllStreams { 
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    min-height: 100vh;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	background-color: #ffffff;
+	overflow: hidden;
+}
+
+.about-title {
+	font-size: 7.5rem;
+	font-weight: 900;
+	text-transform: uppercase;
+	letter-spacing: -0.02em;
+	position: absolute;
+	top: 100px;
+	left: 50%;
+	transform: translateX(-50%);
+	pointer-events: none;
+	white-space: nowrap;
+	font-family: "Arial Black", "Arial Bold", Arial, sans-serif;
+	background: linear-gradient(
+		to bottom,
+		rgb(8 42 123 / 35%) 30%,
+		rgb(255 255 255 / 0%) 76%
+	);
+	-webkit-background-clip: text;
+	background-clip: text;
+	color: transparent;
+}
+
+.carousel-container {
+	width: 100%;
+	max-width: 1200px;
+	height: 450px;
+	position: relative;
+	perspective: 1000px;
+	margin-top: 80px;
+}
+
+.carousel-track {
+	width: 100%;
+	height: 100%;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	position: relative;
+	transform-style: preserve-3d;
+	transition: transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.card {
+	position: absolute;
+	width: 450px;
+	height: 300px;
+	background: white;
+	border-radius: 20px;
+	overflow: hidden;
+	box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+	transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+	cursor: pointer;
+}
+
+.card-expanded {
+	position: absolute;
+	width: 550px;
+	height: 370px;
+	background: white;
+	border-radius: 20px;
+	overflow: hidden;
+	box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.5);
+	transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+	cursor: pointer;
+}
+
+.card img,
+.card-expanded img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.card.center,
+.card-expanded.center {
+	z-index: 10;
+	transform: translateZ(0);
+}
+
+.card.center {
+	opacity: 1;
+}
+.card-expanded.center {
+	opacity: 0.3;
+}
+
+.card.center img,
+.card-expanded.center img {
+	filter: none;
+}
+
+.card.left-2,
+.card-expanded.left-2 {
+	z-index: 1;
+	transform: translateX(-500px) scale(0.7) translateZ(-300px);
+	opacity: 0.6;
+}
+
+.card.left-2 img,
+.card-expanded.left-2 img {
+	filter: grayscale(100%);
+}
+
+.card.left-1,
+.card-expanded.left-1 {
+	z-index: 5;
+	transform: translateX(-280px) scale(0.8) translateZ(-100px);
+	opacity: 0.8;
+}
+
+.card.left-1 img,
+.card-expanded.left-1 img {
+	filter: grayscale(100%);
+}
+
+.card.right-1,
+.card-expanded.right-1 {
+	z-index: 5;
+	transform: translateX(280px) scale(0.8) translateZ(-100px);
+	opacity: 0.8;
+}
+
+.card.right-1 img,
+.card-expanded.right-1 img {
+	filter: grayscale(100%);
+}
+
+.card.right-2,
+.card-expanded.right-2 {
+	z-index: 1;
+	transform: translateX(500px) scale(0.7) translateZ(-300px);
+	opacity: 0.6;
+}
+
+.card.right-2 img,
+.card-expanded.right-2 img {
+	filter: grayscale(100%);
+}
+
+.card.hidden,
+.card-expanded.hidden {
+	opacity: 0;
+	pointer-events: none;
+}
+.member-info {
+	text-align: center;
+	margin-top: 40px;
+	transition: all 0.5s ease-out;
+}
+
+.member-name {
+	color:#4682A9;
+	font-size: 1.5rem;
+	font-weight: 600;
+	margin-bottom: 10px;
+	position: relative;
+	display: inline-block;
+	top: -60px;
+}
+
+.member-name::before,
+.member-name::after {
+	content: "";
+	position: absolute;
+	top: 100%;
+	width: 100px;
+	height: 2px;
+	background: rgb(116, 155, 194)
+}
+
+.member-name::before {
+	left: -120px;
+}
+
+.member-name::after {
+	right: -120px;
+}
+
+.member-role {
+	color: #848696;
+	font-size: 1.5rem;
+	font-weight: 500;
+	opacity: 0.8;
+	text-transform: uppercase;
+	letter-spacing: 0.1em;
+	padding: 10px 0;
+	margin-top: -15px;
+	position: relative;
+}
+.dots {
+	display: flex;
+	justify-content: center;
+	gap: 10px;
+	margin-top: 15px;
+}
+
+.dot {
+	width: 12px;
+	height: 12px;
+	border-radius: 50%;
+	background: #749BC2;
+	cursor: pointer;
+	transition: all 0.3s ease;
+}
+
+.dot.active {
+	background: #4682A9;
+	transform: scale(1.2);
+}
+
+.nav-arrow {
+	position: absolute;
+	top: 50%;
+	transform: translateY(-50%);
+	background: rgba(8, 42, 123, 0.6);
+	color: white;
+	width: 40px;
+	height: 40px;
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	z-index: 20;
+	transition: all 0.3s ease;
+	font-size: 1.5rem;
+	border: none;
+	outline: none;
+	padding-bottom: 4px;
+}
+
+.nav-arrow:hover {
+	background: #749BC2;
+	transform: translateY(-50%) scale(1.1);
+}
+
+.nav-arrow.left {
+	left: 20px;
+	padding-right: 3px;
+}
+
+.nav-arrow.right {
+	right: 20px;
+	padding-left: 3px;
+}
+
+@media (max-width: 768px) {
+	.about-title {
+		font-size: 4.5rem;
+	}
+
+	.card {
+		width: 200px;
+		height: 280px;
+	}
+
+	.card.left-2 {
+		transform: translateX(-250px) scale(0.8) translateZ(-300px);
+	}
+
+	.card.left-1 {
+		transform: translateX(-120px) scale(0.9) translateZ(-100px);
+	}
+
+	.card.right-1 {
+		transform: translateX(120px) scale(0.9) translateZ(-100px);
+	}
+
+	.card.right-2 {
+		transform: translateX(250px) scale(0.8) translateZ(-300px);
+	}
+
+	.member-name {
+		font-size: 2rem;
+	}
+
+	.member-role {
+		font-size: 1.2rem;
+	}
+
+	.member-name::before,
+	.member-name::after {
+		width: 50px;
+	}
+
+	.member-name::before {
+		left: -70px;
+	}
+
+	.member-name::after {
+		right: -70px;
+	}
+}
+
+.add-button, .minus-button { 
+	position: absolute;
+	bottom: 30px;
+	right: 30px;
+	width: 26px;
+	height: 26px;
+	background: transparent;
+	border: 2px solid #FDEB9E;
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	transition: all 0.4s ease;
+	z-index: 3;
+}
+
+.add-button::before,
+.add-button::after,
+.minus-button::before {
+	content: "";
+	position: absolute;
+	background: #FDEB9E;
+	transition: all 0.4s ease;
+}
+
+.add-button::before,
+.minus-button::before { 
+	width: 12px;
+	height: 2px;
+}
+
+.add-button::after {
+	width: 2px;
+	height: 12px;
+}

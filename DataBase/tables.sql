@@ -1,9 +1,10 @@
 CREATE TABLE students (
     student_id SERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
     code_apoge VARCHAR(50) UNIQUE NOT NULL,
-    avg_api DECIMAL(4,2) CHECK (gpa >= 0 AND gpa <= 20),
+    avg_api DECIMAL(4,2) CHECK (avg_api >= 0 AND avg_api <= 20),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
